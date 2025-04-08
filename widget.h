@@ -42,6 +42,8 @@ private slots:
 
     void on_pbConnectSSL_clicked();
 
+    void on_pbSave_clicked();
+
     void updateUI(QAbstractSocket::SocketState state);
 
 

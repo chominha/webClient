@@ -2,6 +2,7 @@
 #include "ui_widget.h"
 #include <QFile>
 #include <QTextStream>
+#include <QSettings>
 
 Widget::Widget(QWidget *parent)
     : QWidget(parent)
@@ -13,6 +14,7 @@ Widget::Widget(QWidget *parent)
     QObject::connect(&socket_, &QAbstractSocket::disconnected, this, &Widget::doDisConnected );
     QObject::connect(&socket_, &QIODevice::readyRead, this, &Widget::doReadyRead );
     QObject::connect(&socket_, &QAbstractSocket::stateChanged, this, &Widget::updateUI);
+    QObject::connect(ui->pbSave, &QPushButton::clicked, this, &Widget::on_pbSave_clicked);
     loadSettings(); // 프로그램 시작 시 설정 불러오기
 
 }
@@ -96,30 +98,45 @@ void Widget::updateUI(QAbstractSocket::SocketState state)
 }
 
 void Widget::loadSettings() {
-    QFile file("settings.txt");
-    if (file.open(QIODevice::ReadOnly)) {
-        QTextStream in(&file);
-        QString host = in.readLine();
-        QString port = in.readLine();
-        bool sslChecked = in.readLine().toInt();
+    QSettings settings("SocketApp", "Settings");
 
-        ui->leHost->setText(host);
-        ui->lePort->setText(port);
-        ui->pbConnectSSL->setChecked(sslChecked);
+    // 창 위치 불러오기
+    if (settings.contains("geometry")) {
+        setGeometry(settings.value("geometry").toRect());
+    }
 
-        file.close();
+    // 텍스트 필드 내용 불러오기
+    ui->leHost->setText(settings.value("host", "naver.com").toString());
+    ui->lePort->setText(settings.value("port", "80").toString());
+    ui->pbConnectSSL->setChecked(settings.value("ssl", false).toBool());
+    ui->pteSend->setPlainText(settings.value("sendContent", "GET / HTTP/1.1\nHost: naver.com\n").toString());
+    ui->pteMessage->setPlainText(settings.value("messageContent", "").toString());
+
+    // SSL이 체크되어 있으면 포트를 443으로 설정
+    if (ui->pbConnectSSL->isChecked()) {
+        ui->lePort->setText("443");
     }
 }
 
 void Widget::saveSettings() {
-    QFile file("settings.txt");
-    if (file.open(QIODevice::WriteOnly)) {
-        QTextStream out(&file);
+    QSettings settings("SocketApp", "Settings");
 
-        out << ui->leHost->text() << "\n";
-        out << ui->lePort->text() << "\n";
-        out << (ui->pbConnectSSL->isChecked() ? 1 : 0) << "\n";
+    // 창 위치 저장
+    settings.setValue("geometry", geometry());
 
-        file.close();
-    }
+    // 텍스트 필드 내용 저장
+    settings.setValue("host", ui->leHost->text());
+    settings.setValue("port", ui->lePort->text());
+    settings.setValue("ssl", ui->pbConnectSSL->isChecked());
+    settings.setValue("sendContent", ui->pteSend->toPlainText());
+    settings.setValue("messageContent", ui->pteMessage->toPlainText());
+
+    settings.sync(); // 설정을 즉시 디스크에 기록
 }
+
+void Widget::on_pbSave_clicked()
+{
+    saveSettings();
+    ui->pteMessage->appendPlainText("Settings saved.\n");
+}
+
