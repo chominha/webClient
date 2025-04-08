@@ -1,0 +1,18 @@
+# Qt 관련 무시 파일
+*.pro.user
+*.user
+*.user.*
+*.autosave
+*.qmake.stash
+*.moc
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.app
+*.qmlc
+*.jsc
+build-*/
+Makefile
