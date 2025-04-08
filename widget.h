@@ -29,7 +29,7 @@ public slots:
     void doReadyRead();
 
 
-
+//git
 
 private slots:
     void on_pbConnect_clicked();
